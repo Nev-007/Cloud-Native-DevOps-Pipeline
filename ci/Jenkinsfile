@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_NAME = 'nev007/backend'
+        IMAGE_TAG = 'ci'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -20,7 +26,23 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                  docker build -t backend:ci -f docker/backend/Dockerfile .
+                  docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -f docker/backend/Dockerfile .
+                '''
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                sh '''
+                  echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
+                '''
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                sh '''
+                  docker push ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
